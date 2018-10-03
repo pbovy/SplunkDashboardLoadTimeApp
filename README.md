@@ -3,11 +3,11 @@ Splunk Dasbhoard Load Time App based on REST calls to the Job Manager. Includes 
 
 SUPPORT:
 
-This code is provided AS-IS. I will try my best to answer questions and / or fix things but I do not have the time to fully support this. It is fully functional within my companies Splunk setup, which consists of an Indexing Cluster, multiple Search Head cluster and dedicated DMC. The code is where needed commented in the xml. 
+This code is provided AS-IS. I will try my best to answer questions and / or fix things but I do not have the time to fully support this. It is fully functional within my companies Splunk setup, which consists of an Indexing Cluster, multiple Search Head clusters and dedicated DMC. The code is where needed commented in the xml. 
 
 SHORT DESCRIPTION:
 
-The app uses an index powermonitoring, which is filled with data from REST calls to the Search Heads from the DMC (or any other machine that can make REST calls to the Search Heads) and loads Job Manager data. There is a TA for the Search Heads to collect all the dashboards and visist to correlate with the Job Manager data. The SA contains the visualizations for this app. 
+The app uses an index powermonitoring, which is filled with data from REST calls to the Search Heads from the DMC (or any other machine that can make REST calls to the Search Heads) and loads Job Manager data. There is a TA for the Search Heads to collect all the dashboards and visits to correlate with the Job Manager data. The SA contains the visualizations for this app. 
 
 DEPENDENCIES:
 
