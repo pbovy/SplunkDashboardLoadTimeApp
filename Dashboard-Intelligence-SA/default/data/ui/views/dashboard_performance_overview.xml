@@ -1,0 +1,682 @@
+<form script="simple_xml_examples:autodiscover.js, ita_infobutton:infobutton.js, drilldown.js" stylesheet="ita_infobutton:infobutton.css,style.css">
+  <label>Dashboard performance overview</label>
+  <!-- base searches -->
+  <!-- only_lookup basesearch - used for the inputs (to be able to choose to exclude/include users/views that are outside of selected time frame) -->
+  <search id="rest_table">
+    <query>index=powermonitoring source=savedsearch_fill_index_powermonitoring_with_existing_dashboards* earliest=-48h $notapps$ $notviews$ app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange" AND view!=landing_page AND view!=flashtimeline | fields app view splunk_server time source 
+            | eval time = strptime(time, "%d/%m/%Y") | sort- time | delta time as delta | streamstats sum(delta) as delta | search delta&gt;-1 | fields splunk_server app view</query>
+  </search>
+  <search id="base_loadtime">
+    <query>index=powermonitoring source=dashboard_loadtimes* earliest=-30d searchDurationSecs&gt;0 | rename appName as app dashboardName as view | search $notapps$ $notviews$ app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange" AND view!=flashtimeline AND view!=landing_page |  eventstats count as "min_visits" by view | search min_visits &gt;= 3  | eventstats median(searchDurationSecs) as "loadtime" by view  | dedup view | sort loadtime</query>
+  </search>
+  <!-- inputs -->
+  <fieldset autoRun="false" submitButton="false">
+    <input type="multiselect" token="notapps" searchWhenChanged="true">
+      <label>Excluded apps</label>
+      <valuePrefix>app!="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> AND </delimiter>
+      <search base="rest_table">
+        <query>| fields app | dedup app | sort app | table app | rename comment AS "Select apps"</query>
+      </search>
+      <fieldForLabel>app</fieldForLabel>
+      <fieldForValue>app</fieldForValue>
+      <choice value="thisdoesnothing">None</choice>
+      <default>thisdoesnothing</default>
+      <initialValue>thisdoesnothing</initialValue>
+    </input>
+    <input type="multiselect" token="notviews" searchWhenChanged="true">
+      <label>Excluded views</label>
+      <valuePrefix>view!="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> AND </delimiter>
+      <search base="rest_table">
+        <query>| fields view | dedup view | sort view | table view | rename comment AS "Select a view"</query>
+      </search>
+      <fieldForLabel>view</fieldForLabel>
+      <fieldForValue>view</fieldForValue>
+      <choice value="thisdoesnothing">None</choice>
+      <default>thisdoesnothing</default>
+      <initialValue>thisdoesnothing</initialValue>
+    </input>
+    <input type="dropdown" token="show_bubble" depends="$hidden$">
+      <label>show_bubble</label>
+      <fieldForLabel>show</fieldForLabel>
+      <fieldForValue>show</fieldForValue>
+      <selectFirstChoice>true</selectFirstChoice>
+      <search>
+        <query>| noop | stats c | table show</query>
+      </search>
+      <change>
+        <condition value="yes">
+          <set token="show_bubble"></set>
+        </condition>
+        <condition value="no">
+          <unset token="show_bubble"></unset>
+        </condition>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel id="target">
+      <html>
+         <center>
+        <h1> Dashboard load times: Overall average and improvements made</h1>
+      </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Current overall average load time </title>
+        <search>
+          <query>index=powermonitoring source=dashboard_loadtimes* earliest=-90d searchDurationSecs&gt;0 
+| rename appName as app dashboardName as view 
+| search app!="thisdoesnothing" view!="thisdoesnothing" app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange"  
+| eventstats count as "min_visits" by view 
+| search min_visits &gt;= 3 
+| eventstats median(searchDurationSecs) as "loadtime" by view 
+| dedup view 
+| sort loadtime 
+| table loadtime icon color view app
+| stats avg(loadtime) as loadtime
+| eval loadtime=round(loadtime,2)." s" 
+| eval target = 21.22
+| gauge loadtime 0 target 30</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="height">60</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">text</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">warning</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">2</option>
+        <option name="status_indicator_app.status_indicator.showOption">3</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Average overall load time to beat</title>
+        <search>
+          <query>index=powermonitoring source=dashboard_loadtimes* earliest=1 latest=04/15/2018:11:53:00 searchDurationSecs&gt;0 
+| rename appName as app dashboardName as view 
+| search app!="thisdoesnothing" view!="thisdoesnothing" app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange"  
+| search shcluster=OPS OR shcluster=BI
+| eventstats count as "min_visits" by view 
+| search min_visits &gt;= 3 
+| eventstats median(searchDurationSecs) as "loadtime" by view 
+| dedup view 
+| sort loadtime 
+| table loadtime icon color view app
+| stats avg(loadtime) as target 
+| eval target =round(target ,2)." s" 
+| table target 
+| gauge target 0 target 30</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="height">60</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">text</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">warning</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">2</option>
+        <option name="status_indicator_app.status_indicator.showOption">3</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Difference in load time compared to target value</title>
+        <search>
+          <query>index=powermonitoring source=dashboard_loadtimes* earliest=-90d searchDurationSecs&gt;0 
+| rename appName as app dashboardName as view 
+| search app!="thisdoesnothing" view!="thisdoesnothing" app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange"  
+| search shcluster=OPS OR shcluster=BI
+| eventstats count as "min_visits" by view 
+| search min_visits &gt;= 3 
+| eventstats median(searchDurationSecs) as "loadtime" by view 
+| dedup view 
+| sort loadtime 
+| table loadtime icon color view app
+| stats avg(loadtime) as loadtime
+| eval target = 21.22
+| eval improvement = loadtime-target
+| gauge improvement -5 0 5
+| eval color = case(x &lt; 0, "#65a637", x=0,"#000000", x &gt; 0, "#ff0000") 
+| eval icon = "star"
+| eval x=round(x,2)." s"
+| table x color</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="height">60</option>
+        <option name="status_indicator_app.status_indicator.colorBy">field_value</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">text</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">warning</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">2</option>
+        <option name="status_indicator_app.status_indicator.showOption">3</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#6db7c6</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel id="ranking_view">
+      <html>
+         <center>
+        <h1> Dashboard load times: Ranking of worst 5 and top 5 performing dashboards </h1>
+      </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+       <div style="text-align: center;">
+         <h2> <b>Worst view: $worst1v$ (app: $worst1a$)</b>
+          </h2>
+       </div>
+       </html>
+      <viz type="status_indicator_app.status_indicator">
+        <search base="base_loadtime">
+          <query>| tail 1 | table loadtime view app | eval color = case(loadtime &lt; 20, "#65a637", loadtime &lt; 30, "#f58f39", loadtime &gt;= 30, "#d93f3c") | eval loadtime=round(loadtime,2)." s" | eval icon="star" | table loadtime icon color view app</query>
+        </search>
+        <option name="height">89</option>
+        <option name="status_indicator_app.status_indicator.colorBy">field_value</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">warning</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">2</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <html>
+       <div style="text-align: center;">
+         <h2> <b>Top view: $top1v$ (app: $top1a$)</b>
+          </h2>
+       </div>
+       </html>
+      <viz type="status_indicator_app.status_indicator">
+        <search base="base_loadtime">
+          <query>| head 1 | table loadtime view app | eval color = case(loadtime &lt; 20, "#65a637", loadtime &lt; 30, "#f58f39", loadtime &gt;= 30, "#d93f3c") | eval loadtime=round(loadtime,2)." s" | eval icon="star" | table loadtime icon color view app</query>
+        </search>
+        <option name="height">89</option>
+        <option name="status_indicator_app.status_indicator.colorBy">field_value</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">star</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">2</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <search>
+          <query>|  noop | stats count | eval Note="Click for details" | fields Note</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">60</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$worst1v$&amp;form.apps=$worst1a$</link>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <search>
+          <query>|  noop | stats count | eval Note="Click for details" | fields Note</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">60</option>
+        <option name="numberPrecision">0</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$top1v$&amp;form.apps=$top1a$</link>
+        </drilldown>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>2nd worst</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| tail 2 | tail 1 | table loadtime view app ]]>
+</query>
+          <finalized>
+            <set token="worst2v">$result.view$</set>
+            <set token="worst2a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">96</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$worst2v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$worst2v$&amp;form.apps=$worst2a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$worst2a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>3rd worst</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| tail 3 | tail 1 | table loadtime view app ]]>
+</query>
+          <finalized>
+            <set token="worst3v">$result.view$</set>
+            <set token="worst3a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">97</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$worst3v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$worst3v$&amp;form.apps=$worst3a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$worst3a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>4th worst</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| tail 4 | tail 1 | table loadtime view app ]]>
+</query>
+          <finalized>
+            <set token="worst4v">$result.view$</set>
+            <set token="worst4a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">97</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$worst4v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$worst4v$&amp;form.apps=$worst4a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$worst4a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>5th worst</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| tail 5 | tail 1 | table loadtime view app ]]>
+</query>
+          <finalized>
+            <set token="worst5v">$result.view$</set>
+            <set token="worst5a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">97</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$worst5v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$worst5v$&amp;form.apps=$worst5a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$worst5a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>2nd</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| head 2 | tail 1 | table loadtime view app]]>
+</query>
+          <finalized>
+            <set token="top2v">$result.view$</set>
+            <set token="top2a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">98</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$top2v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$top2v$&amp;form.apps=$top2a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$top2a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>3rd</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| head 3 | tail 1 | table loadtime view app]]>
+</query>
+          <finalized>
+            <set token="top3v">$result.view$</set>
+            <set token="top3a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">98</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$top3v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$top3v$&amp;form.apps=$top3a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$top3a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>4th</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| head 4 | tail 1 | table loadtime view app]]>
+</query>
+          <finalized>
+            <set token="top4v">$result.view$</set>
+            <set token="top4a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">98</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$top4v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$top4v$&amp;form.apps=$top4a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$top4a$
+      </center>
+      </html>
+    </panel>
+    <panel>
+      <single>
+        <title>5th</title>
+        <search base="base_loadtime">
+          <query>
+           <![CDATA[| head 5 | tail 1 | table loadtime view app]]>
+</query>
+          <finalized>
+            <set token="top5v">$result.view$</set>
+            <set token="top5a">$result.app$</set>
+          </finalized>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">97</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[20,30,40]</option>
+        <option name="underLabel">$top5v$</option>
+        <option name="unit">s</option>
+        <option name="useColors">1</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$top5v$&amp;form.apps=$top5a$</link>
+        </drilldown>
+      </single>
+      <html>
+         <center>
+         app:$top5a$
+      </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel id="bubble_info" depends="$show_bubble$">
+      <html>
+         <h2> Load time, unique users, and total visits over the last 30 days for all views that are viewed at least 3 times</h2>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$show_bubble$">
+      <chart>
+        <title>Hover over app in legend to see statistics for all views in app</title>
+        <search>
+          <query>index=powermonitoring source=savedsearch_fill_index_powermonitoring_with_dashboard_visits visitedFromApp!="search" $notapps$ $notviews$ app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange" AND view!=landing_page AND view!=flashtimeline  domain=https://splunk-$cluster$.&lt;domain&gt;.com earliest=-30d 
+| fields visitedFromApp view user 
+| eval app_dashboard = visitedFromApp."/".view
+| eventstats dc(user) as "users" by view
+| stats count by visitedFromApp view users 
+| search count&gt;2
+| rename count as "Views" visitedFromApp as app 
+| sort -Views 
+| streamstats c as "ranking views"
+| eventstats c as "Total"
+| join type=inner app view 
+    [ search index=powermonitoring source=dashboard_loadtimes* earliest=-30d searchDurationSecs&gt;0 
+    | rename appName as app dashboardName as view 
+    | eventstats count as "min_visits" by view 
+    | search min_visits &gt;= 3 
+    | eventstats median(searchDurationSecs) as "loadtime" by view 
+    | dedup view 
+    | sort loadtime 
+    | streamstats c as "ranking loadtime" 
+    | eventstats c as "total"
+    | search $notapps$ $notviews$ 
+    | table loadtime view app "ranking loadtime" total
+    | sort -loadtime 
+    | eval loadtime=round(loadtime,2) 
+] 
+| sort -loadtime 
+| eval "Overall ranking loadtime" = "place: ".'ranking loadtime'." (".total.")"
+| eval "Overall ranking views" = "place: ".'ranking views'." (".Total.")"
+| table view loadtime Views app users
+| rename Views as visits
+| search view!="firewall_blocked"
+| stats values(loadtime) as "loadtime",  values(users) as "Unique users", values(visits) as "visits" by view app
+</query>
+        </search>
+        <option name="charting.chart">bubble</option>
+        <option name="height">575</option>
+        <drilldown target="_blank">
+          <link>dashboard_performance_specifics?form.views=$row.view$&amp;form.apps=$row.app$</link>
+        </drilldown>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel id="treemap_info">
+      <html>
+         <h2> Dashboard load times of all views visited at least 3 times by app </h2>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title></title>
+      <input type="multiselect" token="apps" searchWhenChanged="true">
+        <label>Display apps</label>
+        <valuePrefix>app="</valuePrefix>
+        <valueSuffix>"</valueSuffix>
+        <delimiter> OR </delimiter>
+        <search base="rest_table">
+          <query>| fields app | dedup app | sort app | table app | rename comment AS "Select apps"</query>
+        </search>
+        <fieldForLabel>app</fieldForLabel>
+        <fieldForValue>app</fieldForValue>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <choice value="*">All</choice>
+      </input>
+      <viz type="treemap_app.treemap">
+        <title>Pinpoint apps in which slow dashboards are concentrated - click on infobutton to see how to use this view</title>
+        <search>
+          <query>index=powermonitoring source=savedsearch_fill_index_powermonitoring_with_dashboard_visits visitedFromApp!="search" $notapps$ $notviews$ app!="SA-Removed" AND app!="SA-ldapsearch" AND app!="ita_infobutton" AND app!="heatmap_app" AND app!="launcher" AND app!="timeline_app" AND app!="system" AND app!="splunk_instrumentation" AND app!="splunk_archiver" AND app!="status_indicator_app" AND app!="Splunk_for_Exchange" AND view!=landing_page AND view!=flashtimeline $apps$ earliest=-30d 
+| fields visitedFromApp view user 
+| eval app_dashboard = visitedFromApp."/".view 
+| stats count by visitedFromApp view 
+| search count &gt;2
+| rename count as "Views" visitedFromApp as app 
+| sort -Views 
+| streamstats c as "ranking views"
+| eventstats c as "Total"
+| join type=inner app view 
+    [ search index=powermonitoring source=dashboard_loadtimes* earliest=-30d searchDurationSecs&gt;0 
+    | rename appName as app dashboardName as view 
+    | eventstats count as "min_visits" by view 
+    | search min_visits &gt;= 3 
+    | eventstats median(searchDurationSecs) as "loadtime" by view 
+    | dedup view 
+    | sort loadtime 
+    | streamstats c as "ranking loadtime" 
+    | eventstats c as "total"
+    | table loadtime view app "ranking loadtime" total
+    | sort -loadtime 
+    | eval loadtime=round(loadtime,2) 
+] 
+| sort x
+| table app view Views loadtime </query>
+        </search>
+        <option name="height">688</option>
+        <option name="treemap_app.treemap.colorMode">sequential</option>
+        <option name="treemap_app.treemap.maxCategories">100</option>
+        <option name="treemap_app.treemap.maxColor">#d93f3c</option>
+        <option name="treemap_app.treemap.minColor">#65a637</option>
+        <option name="treemap_app.treemap.numOfBins">9</option>
+        <option name="treemap_app.treemap.showLabels">false</option>
+        <option name="treemap_app.treemap.showLegend">false</option>
+        <option name="treemap_app.treemap.showTooltip">true</option>
+        <option name="treemap_app.treemap.useColors">true</option>
+        <option name="treemap_app.treemap.useZoom">true</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <div class="infobutton" parent="ranking_view">
+          <p> This shows the ranking of all views that are visited at least 3 times according to load time. The load time is calculated as the median load time over the last 30 days. The worst performing views can be found at the left hand side, including their load times. The best performing views including their load times can be found on the right hand side. Apps corresponding to the views are displayed in between brackets for the top and worst perfoming dashboard. For the other views, the app is displayed underneath the corresponding panel. Click on "Click for details" to drilldown on the best or worst view and find more information about historical load times/visists of this view. To find more information on one of any of the other views, click on the corresponding panel. <br/> <br/> Coloring. 0s-20s: green. 20s-30s: yellow. 30s-40s: orange. 40s+: red.  </p>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <div class="infobutton" parent="target">
+          <p> The target is the average load time measured in the time span of 13-02-2018 (initiation of load time tracking) to 15-04-2018. These ~2 months serve as a benchmark to see if improvements are made to the load times of dashboards after this period. </p>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <div class="infobutton" parent="bubble_info">
+          <p> This bubble chart shows the relation between the load time of a view, how often it is visited and by how many unique users the view is opened. The size of the bubble indicates how often the view is visited. The views that are viewed by many unique users are represented as bubbles situated near the top of the diagram. The slower the view loads, the more it will move to the right of the diagram. For instance, a large bubble that is situated near the top right is slow to load and has many visits by many unique users. This would mean that many users are troubled by a long loading time of the view. </p>
+        </div>
+      </html>
+    </panel>
+    <panel>
+      <html>
+        <div class="infobutton" parent="treemap_info" type="modal">
+          <b>Treemap of views within apps</b>
+          <p> This treemap shows all apps separated by thick white lines. Within such areas you can find all views as blocks separated by thinner white lines. The larger the block, the more visits the view has had in the last 30 days. The color then decides on the loading time of the view: green blocks represent views that are quick, red blocks represent views that are slow. <br/> Hover over the blocks to see the view name, its app and its load time and visits over the last month. </p>
+          <br/> <p>For example: <br/> 1) a large red block: this view is slow and is visited often! <br/> 2) a small green block: this view is quick, but rarely viewed. </p>
+        </div>
+      </html>
+    </panel>
+  </row>
+</form>

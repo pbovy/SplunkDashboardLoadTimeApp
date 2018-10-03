@@ -1,0 +1,16 @@
+[app/ui]
+version = 6.3.3
+modtime = 1475150645.082631000
+
+[app/launcher]
+version = 6.3.3
+modtime = 1475150645.089131000
+
+[savedsearches/savedsearch_fill_index_powermonitoring_with_dashboard_visits]
+access = read : [ * ], write : [ power ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1513600118.297548000
+
+

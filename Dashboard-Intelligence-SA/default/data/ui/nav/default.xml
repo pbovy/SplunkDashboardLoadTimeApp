@@ -1,0 +1,4 @@
+<nav color="#4A778A">
+  <view name="dashboard_performance_overview" />
+  <view name="dashboard_performance_specifics" />
+</nav>

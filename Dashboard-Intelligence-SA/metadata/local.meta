@@ -1,0 +1,35 @@
+[views/dashboard_usage_BI]
+access = read : [ * ]
+export = none
+owner = nobody
+version = 6.5.5
+modtime = 1522064637.296286000
+
+[nav/default]
+version = 6.5.5
+modtime = 1522135296.489236000
+
+[views/dashboard_usage]
+version = 6.5.5
+modtime = 1518103144.463747000
+
+[views/dashboard_loadtimes]
+access = read : [ * ]
+export = none
+owner = nobody
+version = 6.5.5
+modtime = 1522135111.789491000
+
+[views/dashboard_performance_overview]
+access = read : [ * ]
+export = none
+owner = nobody
+version = 6.5.5
+modtime = 1535714148.453840000
+
+[views/dashboard_performance_specifics]
+access = read : [ * ]
+export = none
+owner = nobody
+version = 6.5.5
+modtime = 1524659125.390568000

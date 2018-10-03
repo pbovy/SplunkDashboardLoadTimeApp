@@ -1,0 +1,83 @@
+[savedsearches/shcluster_status]
+access = read : [ * ], write : [ admin ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1519805598.066314000
+
+[savedsearches/kvstore_status]
+access = read : [ * ], write : [ admin ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1519911124.282610000
+
+[savedsearches/dashboard_loadtimes_sec]
+access = read : [ * ], write : [ admin ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1529327879.434329000
+
+[savedsearches/dashboard_loadtimes]
+access = read : [ * ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1535382314.991310000
+
+[savedsearches/dashboard_loadtimes_bi]
+access = read : [ * ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1529324035.729416000
+
+[savedsearches/total_dashboards]
+access = read : [ * ], write : [ admin ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1526472752.629882000
+
+[lookups/dashboards_170518.csv]
+access = read : [ * ], write : [ * ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1526562024.052602000
+
+[savedsearches/new_dashboards]
+access = read : [ * ], write : [ admin ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1526562906.760934000
+
+[savedsearches/total_users]
+access = read : [ * ], write : [ admin ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1526562915.339117000
+
+[savedsearches/dashboard_loadtimes_dm]
+access = read : [ * ], write : [ power ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1529324338.313491000
+
+[savedsearches/dashboard_loadtimes_si]
+access = read : [ * ], write : [ power ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1529324352.491907000
+
+[savedsearches/dashboard_loadtimes_sei]
+access = read : [ * ], write : [ power ]
+export = system
+owner = nobody
+version = 6.5.5
+modtime = 1529327824.283171000
